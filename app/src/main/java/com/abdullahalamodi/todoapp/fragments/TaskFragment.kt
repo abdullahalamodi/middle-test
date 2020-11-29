@@ -136,7 +136,7 @@ class TaskFragment : Fragment(), DatePickerFragment.Callbacks {
         taskName.setText(task.name)
         taskDetails.setText(task.details)
         taskDate.text = dateFormat(task.date)
-        taskPeriod.text = setPeriod(task.period, task.date)
+        taskPeriod.text = setPeriod(task.period)
         setTaskState(task.state)
     }
 
@@ -180,34 +180,41 @@ class TaskFragment : Fragment(), DatePickerFragment.Callbacks {
         };
     }
 
-    private fun setPeriod(date1: Date, date2: Date): String {
+    //human readable
+    private fun setPeriod(date1: Date): String {
         var period = "";
-        //period date
-        val calendar1 = Calendar.getInstance()
-        calendar1.time = date1
-        val month1 = calendar1.get(Calendar.MONTH)
-        val day1 = calendar1.get(Calendar.DAY_OF_MONTH)
-        val hour1 = calendar1.get(Calendar.HOUR_OF_DAY)
-        val minute1 = calendar1.get(Calendar.MINUTE)
-        //create date
-        val calendar2 = Calendar.getInstance()
-        calendar1.time = date2
-        val month2 = calendar2.get(Calendar.MONTH)
-        val day2 = calendar2.get(Calendar.DAY_OF_MONTH)
-        val hour2 = calendar2.get(Calendar.HOUR_OF_DAY)
-        val minute2 = calendar2.get(Calendar.MINUTE)
-
         //get different
-        val month = if (month1 > month2) month1 - minute2 else 0
-        val day = if (day1 > day2) day1 - day2 else 0
-        val hour = if (hour1 > hour2) hour1 - hour2 else 0
-        val minute = if (minute1 > minute2) minute1 - minute2
-        else {
-            if (month == 0 && day == 0 && hour == 0) {
-                taskPeriod.setTextColor(resources.getColor(R.color.red));
+        val diff: Long = date1.time - Date().time
+        var minute = diff / (1000 * 60);
+        var hour = minute / 60;
+        var day = hour / 24;
+        var month = day / 30;
+        //if not expired
+        if (minute > 0) {
+            if (minute > 60) {
+                hour = minute / 60
+                minute %= 60
+            }
+            if (hour > 24) {
+                day = hour / 24
+                hour %= 24;
+                if (day > 30) {
+                    month = day / 30
+                    day %= 30
+                }
+            }else{
+                //close to expire and not done
+                if (task.state != 3) {
+                    taskPeriod.setTextColor(resources.getColor(R.color.red))
+                }
+            }
+        } else {
+            //expired
+            if (task.state != 3) {
+                taskPeriod.setTextColor(resources.getColor(R.color.red))
                 return "expired"
             }
-            0
+            return "completed"
         }
 
         if (month > 0) period += "$month month  "
@@ -217,6 +224,7 @@ class TaskFragment : Fragment(), DatePickerFragment.Callbacks {
         period += " left"
 
         return period;
+
     }
 
     companion object {
